@@ -1,5 +1,6 @@
 import os
 import pandas as pd
+import numpy as np
 from gdown import download
 
 import torch
@@ -22,9 +23,9 @@ class GoodReadsRatingsDataset(TensorDataset):
 
         # load data
         df = pd.read_csv(file_path, sep=',', header=0, quotechar='"')
-        # df['rating'] = df['rating'].astype(float)
-        # df['rating'] = (df['rating'] - 1.0) / 4.0
 
+        self.user_ids = df.encoded_user_id.values
+        
         user_ids = torch.LongTensor(df.encoded_user_id.values)
         item_ids = torch.LongTensor(df.encoded_book_id.values)
         ratings = torch.FloatTensor(df.rating.values)
@@ -43,3 +44,10 @@ class GoodReadsRatingsDataset(TensorDataset):
 
         download(self.download_url, os.path.join(self.root, self.zip_filename), quiet=False)
         extract_archive(os.path.join(self.root, self.zip_filename))
+
+
+    def get_user_record(self, random=True, user_id=0):
+        curr_user = np.random.choice(self.user_ids, 1)[0]
+        curr_user_indices = np.where(self.user_ids == curr_user)[0]
+
+        return curr_user_indices
