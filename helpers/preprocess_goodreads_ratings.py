@@ -5,21 +5,27 @@ import numpy as np
 
 from sklearn import preprocessing
 
-# gzip -cd goodreads_interactions_fantasy_paranormal.json.gz | dd ibs=1024 count=1000000 > tmp.json
+# gzip -cd goodreads_interactions_fantasy_paranormal.json.gz | dd ibs=1024 count=250000 > tmp.json
 # sed '$d' tmp.json > goodreads_ratings_part.json
 # rm tmp.json
 
 root = '../data'
-filename = 'goodreads_ratings_part.json'
+filename = 'goodreads_ratings_{}.json'
 
-file_path = os.path.join(root, filename)
 file_train = os.path.join(root, 'book_ratings_train.csv')
 file_test = os.path.join(root, 'book_ratings_test.csv')
 
-print("Loading json file to dataframe...")
+print("Loading json files to dataframe...")
 
 # load json file
-df = pd.read_json(path_or_buf=file_path, lines=True)
+df_list = []
+for genre in ('fantasy', 'romance'):
+    file_path = os.path.join(root, filename.format(genre))
+    print(file_path)
+    tmp_df = pd.read_json(path_or_buf=file_path, lines=True)
+    df_list.append(tmp_df)
+df = pd.concat(df_list, ignore_index=True)
+print(df)
 
 print("Cleaning up dataframe...")
 
@@ -51,7 +57,7 @@ df['perc'] = df.groupby((df['user_id'] != df['user_id'].shift(1)).cumsum(), as_i
 df['perc'] = df['perc'] / df['count']
 
 # assign newer reviews to test data
-df['test'] = (df['perc'] < 0.34) | ((df['count'] > 10) & (df['perc'] < 0.2))
+df['test'] = (df['perc'] <= 0.2) | ((df['count'] > 10) & (df['perc'] <= 0.1))
 print(df.head(15))
 print(df.tail(15))
 
@@ -68,11 +74,14 @@ book_ids = label_encoder.fit_transform(df.book_id.values)
 user_ids = label_encoder.fit_transform(df.user_id.values)
 df['encoded_user_id'] = user_ids
 df['encoded_book_id'] = book_ids
+df.sort_values(['test', 'encoded_user_id'], inplace=True)
 
 print("Train/Test split:")
 print(df['test'].value_counts())
 print("Ratings distribution:")
 print(df['rating'].value_counts())
+print("Unique users:", np.unique(user_ids).shape)
+print("Unique books:", np.unique(book_ids).shape)
 
 print("Saving files:")
 df.loc[df['test'] == False, ['book_id', 'user_id', 'encoded_book_id', 'encoded_user_id', 'rating', 'datetime_read']].to_csv(file_train, sep=',', header=True, index=False)
