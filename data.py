@@ -8,7 +8,7 @@ from torch.utils.data import TensorDataset
 from torchvision.datasets.utils import extract_archive
 
 class GoodReadsRatingsDataset(TensorDataset):
-    download_url = 'https://drive.google.com/uc?id=1zPQU1LuQ_6qmoNIvEpXfMJ-W8jh6S6WQ'
+    download_url = 'https://drive.google.com/uc?id=116G-epHLGoHxbuDRpwc5nh7IUvuf4cye'
     zip_filename = 'GoodReadsRatingsPart.tgz'
     filename = dict()
     filename['train'] = 'book_ratings_train.csv'
