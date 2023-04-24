@@ -56,7 +56,10 @@ class GoodReadsRatingsDataset(TensorDataset):
 
 
     def get_user_record(self, random=True, user_id=0):
-        curr_user = np.random.choice(self.user_ids, 1)[0]
+        if random:
+            curr_user = np.random.choice(self.user_ids, 1)[0]
+        else:
+            curr_user = user_id
         curr_user_indices = np.where(self.user_ids == curr_user)[0]
 
         return curr_user_indices
