@@ -57,7 +57,7 @@ df['perc'] = df.groupby((df['user_id'] != df['user_id'].shift(1)).cumsum(), as_i
 df['perc'] = df['perc'] / df['count']
 
 # assign newer reviews to test data
-df['test'] = (df['perc'] <= 0.2) | ((df['count'] > 10) & (df['perc'] <= 0.1))
+df['test'] = ((df['count'] <= 10) & df['perc'] <= 0.1) | ((df['count'] > 10) & (df['perc'] <= 0.05))
 print(df.head(15))
 print(df.tail(15))
 
