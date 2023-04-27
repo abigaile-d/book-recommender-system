@@ -1,3 +1,9 @@
+"""
+The purpose of this helper code is to create a random sample list of books 
+that each user has not yet read. 
+This list of books is then added to the dataset with a rating of 0.
+"""
+
 import os
 import datetime
 import pandas as pd
@@ -5,9 +11,6 @@ import numpy as np
 
 from sklearn import preprocessing
 
-# gzip -cd goodreads_interactions_fantasy_paranormal.json.gz | dd ibs=1024 count=250000 > tmp.json
-# sed '$d' tmp.json > goodreads_ratings_part.json
-# rm tmp.json
 
 root = '../data'
 filename = 'goodreads_ratings_{}.json'
@@ -20,12 +23,17 @@ print("Loading json files to dataframe...")
 
 for mode in ('train', 'test'):
     print("Processing:", mode)
+
+    # load list of books that the user has already read
     ratings_df = pd.read_csv(file_ratings.format(mode), sep=',', header=0, quotechar='"')
     ratings_df.set_index(['encoded_user_id'], inplace=True)
 
+    # load list of all books
     titles_df = pd.read_csv(file_titles, sep=',', header=0, quotechar='"')
     titles_df.set_index(['encoded_book_id'], inplace=True)
 
+    # find list of all books that the user has not read, 
+    # and get a random sample with size the same as the books that the user has already read
     for user_id in ratings_df.index.unique():
         read_books = ratings_df.loc[user_id, 'encoded_book_id']
         if not isinstance(read_books, pd.Series):
@@ -38,6 +46,7 @@ for mode in ('train', 'test'):
         ratings_df.loc[user_id, ['book_id']] = unread_books['book_id'].values
         ratings_df.loc[user_id, ['rating']] = 0.0
 
+    # save to csv
     print(ratings_df)
     print("Saving to:", file_unreads.format(mode))
     ratings_df.reset_index(inplace=True)
