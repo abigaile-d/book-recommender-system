@@ -19,14 +19,18 @@ save_path = os.path.join(root, 'book_titles.csv')
 print("Loading ratings csv file to dataframe...")
 ratings_df = pd.read_csv(ratings_file_path, header=0)
 ratings_df = ratings_df[['book_id', 'encoded_book_id']]
-ratings_df.drop_duplicates(subset=['encoded_book_id'], keep='first', inplace=True)
+ratings_df['count'] = 1
+ratings_df = ratings_df.groupby(['book_id', 'encoded_book_id']).sum()
+ratings_df.reset_index(inplace=True)
+print(ratings_df)
+# ratings_df.drop_duplicates(subset=['encoded_book_id'], keep='first', inplace=True)
 ratings_df.set_index('book_id', inplace=True)
 
 
 print("Loading book info json file to dataframe...")
 
 # initialize a dataframe with all book_id's from dataset as index
-titles_df = pd.DataFrame(index=ratings_df.index, columns=['encoded_book_id', 'work_id', 'title'])
+titles_df = pd.DataFrame(index=ratings_df.index, columns=['encoded_book_id', 'work_id', 'title', 'count'])
 titles_df.sort_index(inplace=True)
 
 # read reference json file containing book titles
@@ -41,6 +45,7 @@ for genre in ('fantasy_paranormal', 'romance'):
                 titles_df.loc[book_id, 'work_id'] = line_json['work_id']
                 titles_df.loc[book_id, 'title'] = line_json['title']
                 titles_df.loc[book_id, 'encoded_book_id'] = ratings_df.loc[book_id, 'encoded_book_id']
+                titles_df.loc[book_id, 'count'] = ratings_df.loc[book_id, 'count']
 
 # save to csv file
 titles_df.reset_index(inplace=True)

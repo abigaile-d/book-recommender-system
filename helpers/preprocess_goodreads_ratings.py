@@ -56,6 +56,14 @@ tmp_date_splits = None
 df = df[['user_id', 'book_id', 'rating', 'datetime_read']]
 df['datetime_read'] = pd.to_datetime(df['datetime_read'], format='%a %b %d %H:%M:%S %z %Y')
 
+# cleanup: only include 10,000 most popular books
+book_count = df[['book_id', 'user_id']].groupby(['book_id']).count()
+book_count.sort_values(by=['user_id'], ascending=False, inplace=True)
+popular_books = book_count.iloc[:10000].index
+df.set_index(['book_id'], inplace=True)
+df = df.loc[popular_books]
+df.reset_index(inplace=True)
+
 # ###
 print("Assigning to train and test...")
 
@@ -68,7 +76,6 @@ counts = df['user_id'].value_counts()
 df['count'] = counts.loc[df['user_id']].values
 df['perc'] = df.groupby((df['user_id'] != df['user_id'].shift(1)).cumsum(), as_index=False).cumcount()+1
 df['perc'] = df['perc'] / df['count']
-print(df['perc'])
 
 # assign newer reviews to test data
 df['test'] = ((df['count'] <= 10) & (df['perc'] <= 0.4)) | ((df['count'] > 10) & (df['perc'] <= 0.3))
@@ -76,7 +83,7 @@ df['test'] = ((df['count'] <= 10) & (df['perc'] <= 0.4)) | ((df['count'] > 10) &
 print("\nTrain/Test split before filtering:")
 print(df['test'].value_counts())
 
-# books in test that are not in train set
+# remove books in test that are not in train set
 new_books = np.setdiff1d(df.loc[df['test']]['book_id'].unique(), df.loc[df['test'] == False]['book_id'].unique())
 df = df.loc[~df['book_id'].isin(new_books)]
 
@@ -102,5 +109,5 @@ print("Unique books:", np.unique(df['book_id']).shape)
 
 # save to csv
 print("\nSaving files:")
-df.loc[df['test'] == False, ['book_id', 'user_id', 'encoded_book_id', 'encoded_user_id', 'rating', 'datetime_read']].to_csv(file_train, sep=',', header=True, index=False)
-df.loc[df['test'], ['book_id', 'user_id', 'encoded_book_id', 'encoded_user_id', 'rating', 'datetime_read']].to_csv(file_test, sep=',', header=True, index=False)
+# df.loc[df['test'] == False, ['book_id', 'user_id', 'encoded_book_id', 'encoded_user_id', 'rating', 'datetime_read']].to_csv(file_train, sep=',', header=True, index=False)
+# df.loc[df['test'], ['book_id', 'user_id', 'encoded_book_id', 'encoded_user_id', 'rating', 'datetime_read']].to_csv(file_test, sep=',', header=True, index=False)

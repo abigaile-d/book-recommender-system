@@ -18,6 +18,7 @@ filename = 'goodreads_ratings_{}.json'
 file_ratings = os.path.join(root, 'book_ratings_{}.csv')
 file_unreads = os.path.join(root, 'book_unreads_{}.csv')
 file_titles = os.path.join(root, 'book_titles.csv')
+multiplier = 1
 
 print("Loading ratings csv to dataframe...")
 df_list = []
@@ -52,6 +53,9 @@ for mode in ('train', 'test'):
     unreads_df = ratings_df.copy()
     unreads_df[['book_id', 'encoded_book_id', 'rating']] = 0
     unreads_df['datetime_read'] = None
+    if multiplier > 1:
+        unreads_df = pd.concat([unreads_df]*multiplier)
+    unreads_df.sort_index(inplace=True)
     print(ratings_df)
     print(unreads_df)
     
@@ -72,11 +76,14 @@ for mode in ('train', 'test'):
             unread_books_train = unreads_df_train.loc[user_id, 'encoded_book_id'].tolist()
             if isinstance(unread_books_train, int):
                 unread_books_train = [unread_books_train]
-            sample_size = len(read_books) - len(unread_books_train)
+            sample_size = len(read_books) - int(len(unread_books_train)/multiplier)
             read_books.extend(unread_books_train)
 
         unread_books = titles_df.loc[~titles_df.index.isin(read_books)]
-        unread_books = unread_books.sample(n=sample_size)
+        # unread_books_pop = unread_books.sample(n=int(sample_size*multiplier*0.35), weights=unread_books['count'])
+        unread_books = unread_books.sample(n=int(sample_size*multiplier))
+        # unread_books = pd.concat([unread_books_pop, unread_books_non]).drop_duplicates()
+        # unread_books = unread_books.sample(n=sample_size*multiplier)
         
         unreads_df.loc[user_id, ['encoded_book_id']] = unread_books.index.values
         unreads_df.loc[user_id, ['book_id']] = unread_books['book_id'].values
